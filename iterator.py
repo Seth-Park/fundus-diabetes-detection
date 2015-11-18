@@ -10,15 +10,15 @@ for path in sys.path:
 from nolearn.lasagne.base import BatchIterator
 
 import data
+import pdb
 
 class BatchIteratorAugmented(BatchIterator):
     def __init__(self, batch_size, transform=data.perturb_and_augment,
-                 aug_params=data.no_augmentation_params, sigma=0.0, color_vec=None):
+                 aug_params=data.no_augmentation_params, sigma=0.0):
         self.batch_size = batch_size
         self.tf = transform
         self.aug_params = aug_params
         self.sigma = sigma
-        self.color_vec = color_vec
 
     def __call__(self, X, y=None):
         self.X, self.y = X, y
@@ -38,7 +38,7 @@ class BatchIteratorAugmented(BatchIterator):
 
     def transform(self, Xb, yb):
         Xb = self.tf(Xb, 112, 112, aug_params=self.aug_params,
-                     sigma=self.sigma, color_vec=self.color_vec)
+                     sigma=self.sigma)
         return Xb, yb
 
 

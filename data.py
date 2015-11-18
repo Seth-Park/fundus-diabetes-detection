@@ -28,8 +28,8 @@ STD = np.array([70.53946096, 51.71475228, 43.03428563], dtype=np.float32)
 MEAN = np.array([108.64628601, 75.86886597, 54.34005737], dtype=np.float32)
 
 # set of resampling weights that yields balanced classes
-BALANCE_WEIGHTS = np.array([1.3609453700116234,  14.378223495702006, 
-                            6.637566137566138, 40.235967926689575, 
+BALANCE_WEIGHTS = np.array([1.3609453700116234,  14.378223495702006,
+                            6.637566137566138, 40.235967926689575,
                             49.612994350282484])
 
 # for color augmentation, computed with make_pca.py
@@ -53,9 +53,9 @@ def fast_warp(img, tf, output_shape, mode='constant', order=0):
     This wrapper function is faster than skimage.transform.warp
     """
     m = tf.params
-    t_img = np.zeros((img.shape[0],) + output_shape, img.dtype)
+    t_img = np.zeros((img.shape[0], ) + output_shape, img.dtype)
     for i in range(t_img.shape[0]):
-        t_img[i] = _warp_fast(img[i], m, output_shape=output_shape, 
+        t_img[i] = _warp_fast(img[i], m, output_shape=output_shape,
                               mode=mode, order=order)
     return t_img
 
@@ -79,7 +79,7 @@ def build_center_uncenter_transforms(image_shape):
     return tform_center, tform_uncenter
 
 
-def build_augmentation_transform(zoom=(1.0, 1.0), rotation=0, shear=0, translation=(0, 0), flip=False): 
+def build_augmentation_transform(zoom=(1.0, 1.0), rotation=0, shear=0, translation=(0, 0), flip=False):
     if flip:
         shear += 180
         rotation += 180
@@ -158,7 +158,7 @@ def augment_color(img, sigma=0.1, color_vec=None):
             color_vec = np.zeros(3, dtype=np.float32)
         else:
             color_vec = np.random.normal(0.0, sigma, 3)
-    
+
     alpha = color_vec.astype(np.float32) * EV
     noise = np.dot(U, alpha.T)
     return img + noise[:, np.newaxis, np.newaxis]
@@ -168,12 +168,17 @@ def perturb_and_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0)
     Defualt arguments return non augmented image of shape (w, h).
     To generate a random augmentation, specify aug_params and sigma.
     """
-    img = perturb(img, augmentation_params=aug_params, target_shape=(w, h))
+    images = []
+    for im in img:
+        im = perturb(im, augmentation_params=aug_params, target_shape=(w, h))
+        np.subtract(im, MEAN[:, np.newaxis, np.newaxis], out=im)
+        np.divide(im, STD[:, np.newaxis, np.newaxis], out=im)
+        im = augment_color(im, sigma=sigma)
+        images.append(im)
 
-    np.subtract(img, MEAN[:, np.newaxis, np.newaxis], out=img)
-    np.divide(img, STD[:, np.newaxis, np.newaxis], out=img)
-    img = augment_color(img, sigma=sigma, color_vec=color_vec)
-    return img
+    perturbed_images = np.array(images, dtype=np.float32)
+
+    return perturbed_images
 
 
 def compute_mean(files, batch_size=128):
@@ -238,8 +243,8 @@ def load_image(fname):
 def split_indices(files, labels, test_size=0.1, random_state=RANDOM_STATE):
     names = get_names(files)
     labels = get_labels(names, per_patient=True)
-    spl = cross_validation.StratifiedShuffleSplit(labels[:, 0], 
-                                                  test_size=test_size, 
+    spl = cross_validation.StratifiedShuffleSplit(labels[:, 0],
+                                                  test_size=test_size,
                                                   random_state=random_state,
                                                   n_iter=1)
     tr, te = next(iter(spl))
@@ -257,7 +262,7 @@ def split(files, labels, test_size=0.1, random_state=RANDOM_STATE):
 def load_features(fnames, test=False):
 
     if test:
-        fnames = [os.path.join(os.path.dirname(f), 
+        fnames = [os.path.join(os.path.dirname(f),
                                os.path.basename(f).replace('train', 'test'))
                   for f in fnames]
 
@@ -267,6 +272,6 @@ def load_features(fnames, test=False):
 
 
 def parse_blend_config(cnf):
-    return {run: [os.path.join(FEATURE_DIR, f) for f in files] 
+    return {run: [os.path.join(FEATURE_DIR, f) for f in files]
             for run, files in cnf.items()}
 

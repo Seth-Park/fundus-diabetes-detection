@@ -17,5 +17,5 @@ class RMSPoolLayer(Pool2DLayer):
         del self.mode
 
     def get_output_for(self, input, *args, **kwargs):
-        out = dnn.dnn_pol(T.sqr(input), self.pool_size, self.stride, 'average')
+        out = dnn.dnn_pool(T.sqr(input), self.pool_size, self.stride, 'average')
         return T.sqrt(out + self.epsilon)

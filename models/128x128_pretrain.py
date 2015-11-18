@@ -23,6 +23,7 @@ from nolearn.lasagne import objective
 
 import iterator
 import data
+from layers import RMSPoolLayer
 
 try:
     import lasagne.layers.dnn
@@ -59,10 +60,10 @@ layers0 = [
     ('conv7', Conv2DLayer),
     ('conv8', Conv2DLayer),
     ('pool3', RMSPoolLayer),
-    ('drop1', DropoutLayer),
+    ('dropout1', DropoutLayer),
     ('fc1', DenseLayer),
     ('pool4', FeaturePoolLayer),
-    ('drop2', DropoutLayer),
+    ('dropout2', DropoutLayer),
     ('fc2', DenseLayer),
     ('pool5', FeaturePoolLayer),
     ('output', DenseLayer)
@@ -71,33 +72,34 @@ layers0 = [
 def build_model():
     net = NeuralNet(
         layers=layers0,
-        input_shape=(None, 3, None, None),
-        conv1_num_filters=32, conv1_filter_size=(5, 5), conv1_stride=(2, 2), conv1_pad='same',
-        conv2_num_filters=32, conv2_filter_size=(3, 3), conv2_stride=(1, 1), conv2_pad='same',
+        input_shape=(None, 3, 112, 112),
+        conv1_num_filters=32, conv1_filter_size=(5, 5), conv1_stride=(2, 2), conv1_pad='same', conv1_W=init.Orthogonal('relu'),
+        conv2_num_filters=32, conv2_filter_size=(3, 3), conv2_stride=(1, 1), conv2_pad='same', conv2_W=init.Orthogonal('relu'),
         pool1_pool_size=(3, 3), pool1_stride=(2, 2),
-        conv3_num_filters=64, conv3_filter_size=(5, 5), conv3_stride=(2, 2), conv3_pad='same',
-        conv4_num_filters=64, conv4_filter_size=(3, 3), conv4_stride=(1, 1), conv4_pad='same',
-        conv5_num_filters=64, conv5_filter_size=(3, 3), conv5_stride=(1, 1), conv5_pad='same',
+        conv3_num_filters=64, conv3_filter_size=(5, 5), conv3_stride=(2, 2), conv3_pad='same', conv3_W=init.Orthogonal('relu'),
+        conv4_num_filters=64, conv4_filter_size=(3, 3), conv4_stride=(1, 1), conv4_pad='same', conv4_W=init.Orthogonal('relu'),
+        conv5_num_filters=64, conv5_filter_size=(3, 3), conv5_stride=(1, 1), conv5_pad='same', conv5_W=init.Orthogonal('relu'),
         pool2_pool_size=(3, 3), pool2_stride=(2, 2),
-        conv6_num_filters=128, conv6_filter_size=(3, 3), conv6_stride=(1, 1), conv6_pad='same',
-        conv7_num_filters=128, conv7_filter_size=(3, 3), conv7_stride=(1, 1), conv7_pad='same',
-        conv8_num_filters=128, conv8_filter_size=(3, 3), conv8_stride=(1, 1), conv8_pad='same',
+        conv6_num_filters=128, conv6_filter_size=(3, 3), conv6_stride=(1, 1), conv6_pad='same', conv6_W=init.Orthogonal('relu'),
+        conv7_num_filters=128, conv7_filter_size=(3, 3), conv7_stride=(1, 1), conv7_pad='same', conv7_W=init.Orthogonal('relu'),
+        conv8_num_filters=128, conv8_filter_size=(3, 3), conv8_stride=(1, 1), conv8_pad='same', conv8_W=init.Orthogonal('relu'),
         pool3_pool_size=(3, 3), pool3_stride=(3, 3),
-        drop1_p=0.5,
-        fc1_num_units=1024, fc1_nonlinearity=rectify,
+        dropout1_p=0.5,
+        fc1_num_units=1024, fc1_nonlinearity=rectify, fc1_W=init.Orthogonal('relu'),
         pool4_pool_size=2,
-        drop2_p=0.5,
-        fc2_num_units=1024, fc2_nonlinearity=rectify,
+        dropout2_p=0.5,
+        fc2_num_units=1024, fc2_nonlinearity=rectify, fc2_W=init.Orthogonal('relu'),
         pool5_pool_size=2,
         output_num_units=1,
 
         update=nesterov_momentum,
-        update_learning_rate=0.003,
+        update_learning_rate=0.0001,
 
+        regression=True,
         objective=objective,
         objective_loss_function=squared_error,
         objective_aggregate=aggregate,
-        objective_lambda2=0.0005,
+        objective_l2=0.005,
 
         batch_iterator_train =
            iterator.BatchIteratorAugmented(128,
@@ -108,8 +110,8 @@ def build_model():
            iterator.BatchIteratorAugmented(128,
                                            transform=data.perturb_and_augment),
 
-        max_epochs=300,
-        verbose=1
+        max_epochs=30000,
+        verbose=2
     )
     return net
 
