@@ -1,6 +1,12 @@
 import numpy as np
 import theano
 import theano.tensor as T
+import sys
+import re
+p = re.compile("/home/jilee/projects/*")
+for path in sys.path:
+    if p.match(path):
+        sys.path.remove(path)
 from nolearn.lasagne.base import BatchIterator
 
 import data
