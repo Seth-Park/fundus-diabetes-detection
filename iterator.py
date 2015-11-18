@@ -6,7 +6,7 @@ from nolearn.lasagne.base import BatchIterator
 import data
 
 class BatchIteratorAugmented(BatchIterator):
-    def __init__(self, batch_size, transform=data.perturb_augment_color,
+    def __init__(self, batch_size, transform=data.perturb_and_augment,
                  aug_params=data.no_augmentation_params, sigma=0.0, color_vec=None):
         self.batch_size = batch_size
         self.tf = transform
@@ -29,11 +29,11 @@ class BatchIteratorAugmented(BatchIterator):
             else:
                 yb = None
             yield self.transform(Xb, yb)
-    
+
     def transform(self, Xb, yb):
-        Xb = self.tf(Xb, 112, 112, aug_params=self.aug_params, 
+        Xb = self.tf(Xb, 112, 112, aug_params=self.aug_params,
                      sigma=self.sigma, color_vec=self.color_vec)
         return Xb, yb
 
-    
-        
+
+

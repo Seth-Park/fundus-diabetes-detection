@@ -1,5 +1,10 @@
 import os
 import sys
+import re
+p = re.compile("/home/jilee/projects/*")
+for path in sys.path:
+    if p.match(path):
+        sys.path.remove(path)
 import time
 import numpy as np
 import theano
@@ -63,7 +68,6 @@ layers0 = [
     ('output', DenseLayer)
 ]
 
-def build_model():
 net = NeuralNet(
     layers=layers0,
     input_shape=(None, 3, None, None),
@@ -99,11 +103,11 @@ net = NeuralNet(
                                        transform=data.perturb_and_augment,
                                        aug_params=aug_params,
                                        sigma=0.5),
-    batch_iterator_test = 
+    batch_iterator_test =
        iterator.BatchIteratorAugmented(128,
                                        transform=data.perturb_and_augment),
 
-    max_epochs=300
+    max_epochs=300,
     verbose=1
 )
 
