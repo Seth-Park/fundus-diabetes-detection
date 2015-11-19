@@ -98,20 +98,21 @@ def build_model():
         regression=True,
         objective=objective,
         objective_loss_function=squared_error,
-        objective_aggregate=aggregate,
         objective_l2=0.005,
 
         batch_iterator_train =
-           iterator.BatchIteratorAugmented(128,
+           iterator.BatchIteratorAugmented(256,
                                            transform=data.perturb_and_augment,
                                            aug_params=aug_params,
                                            sigma=0.5),
         batch_iterator_test =
-           iterator.BatchIteratorAugmented(128,
+           iterator.BatchIteratorAugmented(256,
                                            transform=data.perturb_and_augment),
 
-        max_epochs=30000,
-        verbose=2
+        max_epochs=1000,
+        verbose=1,
+        use_label_encoder=False
+
     )
     return net
 

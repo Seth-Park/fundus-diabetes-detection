@@ -16,7 +16,9 @@ import data
               show_default=True, help='Path to the data source')
 @click.option('--label', default='/nikel/dhpark/fundus/kaggle/original/training/trainLabels.csv',
               show_default=True, help='Path to the label source')
-def main(model, datadir, label):
+@click.option('--save_weights', default='/nikel/dhpark/fundus_saved_weights',
+              show_default=True, help='Path to the directory where the weights are saved')
+def main(model, datadir, label, save_weights):
 
     files = data.get_image_files(datadir)
     names = data.get_names(files)
@@ -27,6 +29,7 @@ def main(model, datadir, label):
 
     print("Training initiated...")
     net.fit(X, y)
+    net.save_weights_to(os.path.join(save_weights, 'first_stage_model'))
 
 def load_model(mod):
     return importlib.import_module(mod.replace('/', '.').split('.py')[0])
