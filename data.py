@@ -17,6 +17,8 @@ import skimage.transform
 from skimage.transform._warps_cy import _warp_fast
 from sklearn.utils import shuffle
 from sklearn import cross_validation
+from multiprocessing.pool import Pool
+from functools import partial
 
 RANDOM_STATE = 9
 FEATURE_DIR = 'data/features'
@@ -163,21 +165,35 @@ def augment_color(img, sigma=0.1, color_vec=None):
     noise = np.dot(U, alpha.T)
     return img + noise[:, np.newaxis, np.newaxis]
 
-def perturb_and_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0):
+def single_perturb_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0):
+    img = perturb(img, augmentation_params=aug_params, target_shape=(w, h))
+    np.subtract(img, MEAN[:, np.newaxis, np.newaxis], out=img)
+    np.divide(img, STD[:, np.newaxis, np.newaxis], out=img)
+    img = augment_color(img, sigma=sigma)
+    return img
+
+
+def batch_perturb_and_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0):
     """Transform and augment image whose output shape is (w, h).
     Defualt arguments return non augmented image of shape (w, h).
     To generate a random augmentation, specify aug_params and sigma.
     """
     images = []
     for im in img:
-        im = perturb(im, augmentation_params=aug_params, target_shape=(w, h))
-        np.subtract(im, MEAN[:, np.newaxis, np.newaxis], out=im)
-        np.divide(im, STD[:, np.newaxis, np.newaxis], out=im)
-        im = augment_color(im, sigma=sigma)
+        im = single_perturb_augment(im, w=w, h=w, aug_params=aug_params, sigma=sigma)
         images.append(im)
 
     perturbed_images = np.array(images, dtype=np.float32)
+    return perturbed_images
 
+
+def parallel_perturb_and_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0):
+    images = img
+    p = Pool(8)
+    process = partial(single_perturb_augment, w=w, h=h, aug_params=aug_params, sigma=sigma)
+    results = p.map(process, images)
+
+    perturbed_images = np.array(results, dtype=np.float32)
     return perturbed_images
 
 
