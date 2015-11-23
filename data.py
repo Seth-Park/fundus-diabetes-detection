@@ -24,10 +24,12 @@ RANDOM_STATE = 9
 FEATURE_DIR = 'data/features'
 
 # channel standard deviations
-STD = np.array([70.53946096, 51.71475228, 43.03428563], dtype=np.float32)
+#STD = np.array([70.53946096, 51.71475228, 43.03428563], dtype=np.float32)
+STD = np.array([70.53946096, 51.71475228, 43.03428563])
 
 # channel means
-MEAN = np.array([108.64628601, 75.86886597, 54.34005737], dtype=np.float32)
+#MEAN = np.array([108.64628601, 75.86886597, 54.34005737], dtype=np.float32)
+MEAN = np.array([108.64628601, 75.86886597, 54.34005737])
 
 # set of resampling weights that yields balanced classes
 BALANCE_WEIGHTS = np.array([1.3609453700116234,  14.378223495702006,
@@ -35,10 +37,14 @@ BALANCE_WEIGHTS = np.array([1.3609453700116234,  14.378223495702006,
                             49.612994350282484])
 
 # for color augmentation, computed with make_pca.py
+#U = np.array([[-0.56543481, 0.71983482, 0.40240142],
+#              [-0.5989477, -0.02304967, -0.80036049],
+#              [-0.56694071, -0.6935729, 0.44423429]] ,dtype=np.float32)
+#EV = np.array([1.65513492, 0.48450358, 0.1565086], dtype=np.float32)
 U = np.array([[-0.56543481, 0.71983482, 0.40240142],
               [-0.5989477, -0.02304967, -0.80036049],
-              [-0.56694071, -0.6935729, 0.44423429]] ,dtype=np.float32)
-EV = np.array([1.65513492, 0.48450358, 0.1565086], dtype=np.float32)
+              [-0.56694071, -0.6935729, 0.44423429]])
+EV = np.array([1.65513492, 0.48450358, 0.1565086])
 
 no_augmentation_params = {
     'zoom_range': (1.0, 1.0),
@@ -167,8 +173,10 @@ def augment_color(img, sigma=0.1, color_vec=None):
 
 def single_perturb_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0):
     img = perturb(img, augmentation_params=aug_params, target_shape=(w, h))
-    np.subtract(img, MEAN[:, np.newaxis, np.newaxis], out=img)
-    np.divide(img, STD[:, np.newaxis, np.newaxis], out=img)
+    img = img - MEAN[:, np.newaxis, np.newaxis]
+    img = img / STD[:, np.newaxis, np.newaxis]
+    #np.subtract(img, MEAN[:, np.newaxis, np.newaxis], out=img)
+    #np.divide(img, STD[:, np.newaxis, np.newaxis], out=img)
     img = augment_color(img, sigma=sigma)
     return img
 
@@ -189,7 +197,7 @@ def batch_perturb_and_augment(img, w, h, aug_params=no_augmentation_params, sigm
 
 def parallel_perturb_and_augment(img, w, h, aug_params=no_augmentation_params, sigma=0.0):
     images = img
-    p = Pool(8)
+    p = Pool()
     process = partial(single_perturb_augment, w=w, h=h, aug_params=aug_params, sigma=sigma)
     results = p.map(process, images)
 
@@ -251,7 +259,8 @@ def get_names(files):
 
 def load_image(fname):
     if isinstance(fname, basestring):
-        return np.array(Image.open(fname), dtype=np.float32).transpose(2, 1, 0)
+        #return np.array(Image.open(fname), dtype=np.float32).transpose(2, 1, 0)
+        return np.array(Image.open(fname)).transpose(2, 1, 0)
     else:
         return np.array([load_image(f) for f in fname])
 
