@@ -6,6 +6,7 @@ import numpy as np
 from random import shuffle
 import click
 import pdb
+from data_util import get_image_files
 
 
 @click.command()
@@ -31,13 +32,13 @@ def scale_radius(img, scale):
     return cv2.resize(img, (0, 0), fx=s, fy=s)
 
 
-def get_image_files(datadir, left_only=False, shuffle=False):
-    files = glob('{}/*'.format(datadir))
-    if left_only:
-        files = [f for f in files if 'left' in f]
-    if shuffle:
-        return shuffle(files)
-    return sorted(files)
+# def get_image_files(datadir, left_only=False, shuffle=False):
+#     files = glob('{}/*'.format(datadir))
+#     if left_only:
+#         files = [f for f in files if 'left' in f]
+#     if shuffle:
+#         return shuffle(files)
+#     return sorted(files)
 
 if __name__ == '__main__':
     main()
