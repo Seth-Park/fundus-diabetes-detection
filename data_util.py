@@ -18,7 +18,6 @@ from math import sin, cos
 
 import pdb
 
-#
 
 def get_image_files(datadir, left_only=False, shuffle=False):
     files = glob('{}/*'.format(datadir))
@@ -77,6 +76,8 @@ def compute_mean_across_channels(files, batch_size=512):
 
 def compute_mean_and_std(files):
     images = load_images(files)
+    print('images loaded')
+    print('computing...')
     mean = images.mean(axis=0, keepdims=True)
     std = images.std(axis=0, keepdims=True)
     return mean, std
