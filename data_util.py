@@ -18,7 +18,7 @@ from math import sin, cos
 
 import pdb
 
-
+#
 
 def get_image_files(datadir, left_only=False, shuffle=False):
     files = glob('{}/*'.format(datadir))
