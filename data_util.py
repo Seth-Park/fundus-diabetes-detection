@@ -1,6 +1,7 @@
 import os
 from glob import glob
 from random import shuffle
+from time import time
 
 import numpy as np
 import pandas as pd
@@ -48,7 +49,8 @@ def load_images(files):
     p = Pool()
     process = imread
     results = p.map(process, files)
-    images = np.array(results, dtype=np.float32)
+    #images = np.array(results, dtype=np.float32)
+    images = np.array(results)
     images = images.transpose(0, 3, 1, 2)
     return images
 
@@ -62,7 +64,7 @@ def load_images_uint(files):
     return images
 
 
-def compute_mean(files, batch_size=512):
+def compute_mean_across_channels(files, batch_size=512):
     ret = np.zeros(3)
     shape = None
     for i in range(0, len(files), batch_size):
@@ -73,7 +75,14 @@ def compute_mean(files, batch_size=512):
     return (ret / n).astype(np.float32)
 
 
-def compute_std(files, batch_size=512):
+def compute_mean_and_std(files):
+    images = load_images(files)
+    mean = images.mean(axis=0, keepdims=True)
+    std = images.std(axis=0, keepdims=True)
+    return mean, std
+
+
+def compute_std_across_channels(files, batch_size=512):
     s = np.zeros(3)
     s2 = np.zeros(3)
     shape = None
@@ -97,7 +106,7 @@ def fast_warp(img, tf, mode='constant', order=0):
 
 def build_augmentation_transform(test=False):
     pid = mp.current_process()._identity[0]
-    randst = np.random.mtrand.RandomState(pid)
+    randst = np.random.mtrand.RandomState(pid + int(time() % 3877))
     if not test:
         r = randst.uniform(-0.1, 0.1)
         rotation = randst.uniform(0, 2 * 3.1415926535)
@@ -123,8 +132,6 @@ def build_augmentation_transform(test=False):
     homogenous_matrix[0][1] = c01
     homogenous_matrix[1][1] = c11
     homogenous_matrix[2][2] = 1
-
-    print(homogenous_matrix)
 
 
     transform = skimage.transform.AffineTransform(homogenous_matrix)
@@ -156,7 +163,6 @@ def parallel_augment(images, test=False):
     p = Pool()
     process = partial(augment, test=test)
     results = p.map(process, images)
-
     augmented_images = np.array(results, dtype=np.float32)
     return augmented_images
 
