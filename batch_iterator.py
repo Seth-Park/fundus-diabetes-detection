@@ -2,13 +2,14 @@ import numpy as np
 from Queue import Queue
 import threading
 from time import time
+import data_util
 
 class BatchIterator(object):
 
     def __init__(self, file_dir, label_file, batch_size, process_func=None, testing=None):
-        self.files = data.get_image_files(file_dir)
-        names = data.get_names(files)
-        self.labels = data.get_labels(names, label_file=label_file).astype(np.float32)
+        self.files = data_util.get_image_files(file_dir)
+        names = data_util.get_names(files)
+        self.labels = data_util.get_labels(names, label_file=label_file).astype(np.float32)
         self.n = len(files)
         self.batch_size = batch_size
         self.testing = testing
@@ -46,7 +47,7 @@ class BatchIterator(object):
         batch_idx = self.get_permuted_batch_idx()
         batch_files = self.files[batch_idx]
         batch_X = data.load_image(batch_files)
-        batch_X = self.process_func(batch_X)
+        batch_X = self.process_func(batch_X, self.testing)
         batch_y = self.labels[batch_idx]
         return (batch_X, batch_y)
 

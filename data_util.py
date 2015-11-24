@@ -96,10 +96,12 @@ def fast_warp(img, tf, mode='constant', order=0):
 
 
 def build_augmentation_transform(test=False):
+    # Need the following two lines to introduce randomness in multiprocessing
+    # Somehow the processes share the same random numbers without these
     pid = mp.current_process()._identity[0]
     randst = np.random.mtrand.RandomState(pid)
     if not test:
-        r = randst.uniform(-0.1, 0.1)
+        r = randst.uniform(-0.1, 0.1) # scale: increase or decrease up to 10%
         rotation = randst.uniform(0, 2 * 3.1415926535)
         skew = randst.uniform(-0.2, 0.2) + rotation
     else:
@@ -145,14 +147,20 @@ def build_center_uncenter_transforms(image_shape):
 
 
 def augment(img, test=False):
+    """
+    Augment a single image.
+    """
     augment = build_augmentation_transform(test)
     center, uncenter = build_center_uncenter_transforms(img.shape[1:])
-    transform = uncenter + augment + center
+    transform = uncenter + augment + center # move to center, augment, and then shift back
     img = fast_warp(img, transform, mode='constant', order=0)
     return img
 
 
 def parallel_augment(images, test=False):
+    """
+    Augment multiple images through parallelization.
+    """
     p = Pool()
     process = partial(augment, test=test)
     results = p.map(process, images)

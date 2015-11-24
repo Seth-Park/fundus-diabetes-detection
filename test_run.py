@@ -15,7 +15,8 @@ aug_params = {
 
 
 files = data.get_image_files('testing')
-X = data.load_image(files)
+X1 = data.load_image(files)
+X2 = data_util.load_images(files)
 
 print("Number of images: {}".format(len(X)))
 

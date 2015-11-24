@@ -93,7 +93,7 @@ def build_model():
         output_num_units=1,
 
         update=nesterov_momentum,
-        update_learning_rate=0.0001,
+        update_learning_rate=0.01,
 
         regression=True,
         objective=objective,
@@ -109,7 +109,7 @@ def build_model():
            iterator.BatchIteratorAugmented(256,
                                            transform=data.perturb_and_augment),
 
-        max_epochs=1000,
+        max_epochs=300,
         verbose=1,
         use_label_encoder=False
 
