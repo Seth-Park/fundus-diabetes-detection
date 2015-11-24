@@ -74,15 +74,6 @@ def compute_mean_across_channels(files, batch_size=512):
     return (ret / n).astype(np.float32)
 
 
-def compute_mean_and_std(files):
-    images = load_images(files)
-    print('images loaded')
-    print('computing...')
-    mean = images.mean(axis=0, keepdims=True)
-    std = images.std(axis=0, keepdims=True)
-    return mean, std
-
-
 def compute_std_across_channels(files, batch_size=512):
     s = np.zeros(3)
     s2 = np.zeros(3)
@@ -94,7 +85,27 @@ def compute_std_across_channels(files, batch_size=512):
         s2 += np.power(images, 2).sum(axis=(0, 2, 3))
     n = len(files) * shape[2] * shape[3]
     var = (s2 - s**2.0 / n) / (n - 1)
-    return np.sqrt(var)
+    return np.sqrt(var).astype(np.float32)
+
+
+def compute_stat_pixel(files, batch_size=512):
+    dummy_img = load_images(files[0])
+    shape = dummy_img.shape[1:]
+    mean = np.zeros(shape)
+    batches = []
+
+    for i in range(0, len(files), batch_size):
+        images = load_images(files[i : i + batch_size])
+        batches.append(images)
+        mean += images.sum(axis=0)
+    n = len(files)
+    mean = (mean / n).astype(np.float32)
+
+    std = np.zeros(shape)
+    for b in batches:
+        std += ((b - mean) ** 2).sum(axis=0)
+    std = np.sqrt(std / (n - 1)).astype(np.float32)
+    return mean, std
 
 
 def fast_warp(img, tf, mode='constant', order=0):
@@ -109,10 +120,10 @@ def build_augmentation_transform(test=False):
     pid = mp.current_process()._identity[0]
     randst = np.random.mtrand.RandomState(pid + int(time() % 3877))
     if not test:
-        r = randst.uniform(-0.1, 0.1)
+        r = randst.uniform(-0.1, 0.1)  # scale
         rotation = randst.uniform(0, 2 * 3.1415926535)
         skew = randst.uniform(-0.2, 0.2) + rotation
-    else:
+    else: # only rotate randomly during test time
         r = 0
         rotation = randst.uniform(0, 2 * 3.1415926535)
         skew = rotation
@@ -160,7 +171,7 @@ def augment(img, test=False):
     return img
 
 
-def parallel_augment(images, test=False):
+def parallel_augment(images, normalize=None, test=False):
     p = Pool()
     process = partial(augment, test=test)
     results = p.map(process, images)
