@@ -172,6 +172,11 @@ def augment(img, test=False):
 
 
 def parallel_augment(images, normalize=None, test=False):
+    if normalize is not None:
+        mean, std = normalize
+        images = images - mean[:, np.newaxis, np.newaxis] # assuming channel-wise normalization
+        images = images / std[:, np.newaxis, np.newaxis]
+
     p = Pool()
     process = partial(augment, test=test)
     results = p.map(process, images)

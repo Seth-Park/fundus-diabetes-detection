@@ -6,13 +6,17 @@ import data_util
 
 class BatchIterator(object):
 
-    def __init__(self, file_dir, label_file, batch_size, process_func=None, testing=None):
-        self.files = data_util.get_image_files(file_dir)
-        names = data_util.get_names(files)
-        self.labels = data_util.get_labels(names, label_file=label_file).astype(np.float32)
+    def __init__(self, files, labels, batch_size, normalize=None, process_func=None, testing=None):
+        self.files = files
+        self.labels = labels
         self.n = len(files)
         self.batch_size = batch_size
         self.testing = testing
+
+        if normalize is not None:
+            self.mean, self.std = normalize
+            #self.mean = np.load(mean)
+            #self.std = np.load(std)
 
         if process_func is None:
             process_func = lambda x: x
@@ -22,6 +26,7 @@ class BatchIterator(object):
             self.create_index = lambda: np.random.permutation(self.n)
         else:
             self.create_index = lambda: range(self.n)
+
 
         self.indices = self.create_index()
         assert self.n > self.batch_size
@@ -47,7 +52,7 @@ class BatchIterator(object):
         batch_idx = self.get_permuted_batch_idx()
         batch_files = self.files[batch_idx]
         batch_X = data.load_image(batch_files)
-        batch_X = self.process_func(batch_X, self.testing)
+        batch_X = self.process_func(batch_X, (self.mean, self.std), self.testing)
         batch_y = self.labels[batch_idx]
         return (batch_X, batch_y)
 
