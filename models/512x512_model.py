@@ -12,7 +12,6 @@ MaxPool2DLayer = dnn.MaxPool2DDNNLayer
 DenseLayer = nn.layers.DenseLayer
 
 input_size = 512
-batch_size = 64
 input_height, input_width = (input_size, input_size)
 output_dim = 5
 num_channels = 3
@@ -33,19 +32,20 @@ lambda_reg = 0.0002
 lr = 0.005
 momentum = 0.9
 
-def build_model():
+def build_model(input_var):
 
     layers = []
 
     input_layer = nn.layers.InputLayer(
-            shape=(batch_size, num_channels, input_width, input_height),
+            shape=(None, num_channels, input_width, input_height),
+            input_var=input_var,
             name='inputs'
     )
     layers.append(input_layer)
 
     conv_1 = Conv2DLayer(layers[-1],
                          num_filters=32, filter_size=(7, 7), stride=(2, 2),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -56,7 +56,7 @@ def build_model():
 
     conv_2 = Conv2DLayer(layers[-1],
                          num_filters=32, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -64,7 +64,7 @@ def build_model():
 
     conv_3 = Conv2DLayer(layers[-1],
                          num_filters=32, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -75,7 +75,7 @@ def build_model():
 
     conv_4 = Conv2DLayer(layers[-1],
                          num_filters=64, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -83,7 +83,7 @@ def build_model():
 
     conv_5 = Conv2DLayer(layers[-1],
                          num_filters=64, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -94,7 +94,7 @@ def build_model():
 
     conv_6 = Conv2DLayer(layers[-1],
                          num_filters=128, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -102,7 +102,7 @@ def build_model():
 
     conv_7 = Conv2DLayer(layers[-1],
                          num_filters=128, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -110,7 +110,7 @@ def build_model():
 
     conv_8 = Conv2DLayer(layers[-1],
                          num_filters=128, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -118,7 +118,7 @@ def build_model():
 
     conv_9 = Conv2DLayer(layers[-1],
                          num_filters=128, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -129,7 +129,7 @@ def build_model():
 
     conv_10 = Conv2DLayer(layers[-1],
                           num_filters=256, filter_size=(3, 3), stride=(1, 1),
-                          border_mode='same',
+                          pad='same',
                           nonlinearity=LeakyRectify(leakiness),
                           W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                           untie_biases=True)
@@ -137,7 +137,7 @@ def build_model():
 
     conv_11 = Conv2DLayer(layers[-1],
                          num_filters=256, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -145,7 +145,7 @@ def build_model():
 
     conv_12 = Conv2DLayer(layers[-1],
                          num_filters=256, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -153,7 +153,7 @@ def build_model():
 
     conv_13 = Conv2DLayer(layers[-1],
                          num_filters=256, filter_size=(3, 3), stride=(1, 1),
-                         border_mode='same',
+                         pad='same',
                          nonlinearity=LeakyRectify(leakiness),
                          W=nn.init.Orthogonal(1.0), b=nn.init.Constant(0.1),
                          untie_biases=True)
@@ -167,7 +167,7 @@ def build_model():
 
     fc_1 = DenseLayer(layers[-1],
                       num_units=2048,
-                      nonlinearity=LeakyRectify(0.01),
+                      nonlinearity=LeakyRectify(leakiness),
                       W=nn.init.Orthogonal(1.0),
                       b=nn.init.Constant(0.1))
     layers.append(fc_1)
@@ -189,7 +189,7 @@ def build_model():
     layers.append(drop_3)
 
     output = DenseLayer(layers[-1],
-                      num_units=5,
+                      num_units=output_dim,
                       nonlinearity=softmax)
     layers.append(output)
 

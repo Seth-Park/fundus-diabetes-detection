@@ -43,12 +43,17 @@ def get_labels(names, labels=None, label_file='data/trainLabels.csv', per_patien
     else:
         return labels
 
+def one_hot(labels):
+    identity = np.eye(max(labels) + 1)
+    return identity[labels].astype(np.int32)
 
 def load_images(files):
     p = Pool()
     process = imread
     results = p.map(process, files)
     #images = np.array(results, dtype=np.float32)
+    p.close()
+    p.join()
     images = np.array(results)
     images = images.transpose(0, 3, 1, 2)
     return images
@@ -58,6 +63,8 @@ def load_images_uint(files):
     p = Pool()
     process = imread
     results = p.map(process, files)
+    p.close()
+    p.join()
     images = np.array(results)
     images = images.transpose(0, 3, 1, 2)
     return images
@@ -67,6 +74,7 @@ def compute_mean_across_channels(files, batch_size=512):
     ret = np.zeros(3)
     shape = None
     for i in range(0, len(files), batch_size):
+        print('processing from {}'.format(i))
         images = load_images(files[i : i + batch_size])
         shape = images.shape
         ret += images.sum(axis=(0, 2, 3))
@@ -79,6 +87,7 @@ def compute_std_across_channels(files, batch_size=512):
     s2 = np.zeros(3)
     shape = None
     for i in range(0, len(files), batch_size):
+        print('processing from {}'.format(i))
         images = np.array(load_images_uint(files[i : i + batch_size]), dtype=np.float64)
         shape = images.shape
         s += images.sum(axis=(0, 2, 3))
@@ -180,6 +189,8 @@ def parallel_augment(images, normalize=None, test=False):
     p = Pool()
     process = partial(augment, test=test)
     results = p.map(process, images)
+    p.close()
+    p.join()
     augmented_images = np.array(results, dtype=np.float32)
     return augmented_images
 

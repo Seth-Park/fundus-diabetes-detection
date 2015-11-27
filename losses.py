@@ -1,5 +1,6 @@
 import theano
 import theano.tensor as T
+import pdb
 
 
 def log_loss(y, t, eps=1e-15):
@@ -16,7 +17,7 @@ def accuracy(y, t, eps=1e-15):
     t_ = T.cast(T.argmax(t, axis=1), 'int32')
 
     # predictions = T.argmax(y, axis=1)
-    return T.mean(T.switch(T.eq(y_, t_), 1, 0))
+    return T.mean(T.eq(y_, t_))
 
 
 def quad_kappa_loss(y, t, y_pow=1, eps=1e-15):

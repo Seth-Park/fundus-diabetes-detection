@@ -7,7 +7,7 @@ import data_util
 class BatchIterator(object):
 
     def __init__(self, files, labels, batch_size, normalize=None, process_func=None, testing=None):
-        self.files = files
+        self.files = np.array(files)
         self.labels = labels
         self.n = len(files)
         self.batch_size = batch_size
@@ -51,7 +51,7 @@ class BatchIterator(object):
     def next(self):
         batch_idx = self.get_permuted_batch_idx()
         batch_files = self.files[batch_idx]
-        batch_X = data.load_image(batch_files)
+        batch_X = data_util.load_images(batch_files)
         batch_X = self.process_func(batch_X, (self.mean, self.std), self.testing)
         batch_y = self.labels[batch_idx]
         return (batch_X, batch_y)
@@ -65,15 +65,15 @@ def threaded_iterator(iterator, num_cached=50):
             queue.put(item)
         queue.put(sentinel)
 
-        thread = threading.Thread(target=producer)
-        thread.daemon = True
-        thread.start()
+    thread = threading.Thread(target=producer)
+    thread.daemon = True
+    thread.start()
 
+    item = queue.get()
+    while item is not sentinel:
+        yield item
+        queue.task_done()
         item = queue.get()
-        while item is not sentinel:
-            yield item
-            queue.task_done()
-            item = queue.get()
 
 
 
