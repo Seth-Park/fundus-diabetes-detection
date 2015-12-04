@@ -40,22 +40,17 @@ output_dim = 5
 num_channels = 3
 
 # loss function config
-obj_loss = quad_kappa_log_hybrid_loss_clipped
-log_scale = 0.50
-log_offset = 0.50
-log_cutoff = 0.80
 l2_reg = 0.0002
-y_pow = 2
+y_pow = 1
 
 
 # training configs
 batch_size = 64
-lr = theano.shared(np.array(0.01, dtype=theano.config.floatX))
-lr_decay = np.array(0.9, dtype=theano.config.floatX)
-lr_decay_period = 5 # epochs
-n_epochs = 100
+lr = theano.shared(np.array(0.0001, dtype=theano.config.floatX))
+lr_schedule = {5 : 0.003, 70 : 0.001, 100 : 0.0005, 120 : 0.0001}
+n_epochs = 150
 momentum = 0.9
-validate_every = 50 # iterations
+validate_every = 100 # iterations
 save_every = 20 # epochs
 
 # paths
@@ -63,7 +58,7 @@ data_dir = "/nikel/dhpark/fundus/kaggle/original/training/train_medium"
 label_file = "/nikel/dhpark/fundus/kaggle/original/training/trainLabels.csv"
 #mean_file = ""
 model = "models/512x512_model"
-dst_path = "/nikel/dhpark/fundus_saved_weights"
+dst_path = "/nikel/dhpark/fundus_saved_weights/log_loss"
 
 
 # Load the model
@@ -126,23 +121,22 @@ print('Number of trainable parameters: {}'.format(num_params))
 predictions = nn.layers.get_output(output_layer)
 train_log_loss = categorical_crossentropy(predictions, y)
 train_log_loss = train_log_loss.mean()
-train_kappa_loss = quad_kappa_loss(predictions, y, y_pow=y_pow)
 params = nn.layers.get_all_params(output_layer, regularizable=True)
 regularization = sum(T.sum(p ** 2) for p in params)
-train_hybrid_loss = train_kappa_loss + log_scale * T.clip(train_log_loss, log_cutoff, 10 ** 3) + l2_reg * regularization
+train_log_loss = train_log_loss + l2_reg * regularization
 train_accuracy = accuracy(predictions, y)
+train_kappa = quad_kappa_loss(predictions, y)
 
 
 valid_predictions = nn.layers.get_output(output_layer, deterministic=True)
 valid_log_loss = categorical_crossentropy(valid_predictions, y)
 valid_log_loss = valid_log_loss.mean()
-valid_kappa_loss = quad_kappa_loss(valid_predictions, y)
-valid_loss = valid_kappa_loss
 valid_accuracy = accuracy(valid_predictions, y)
+valid_kappa = quad_kappa_loss(valid_predictions, y)
 
 # Scale grads
 all_params = nn.layers.get_all_params(output_layer, trainable=True)
-all_grads = T.grad(train_hybrid_loss, all_params)
+all_grads = T.grad(train_log_loss, all_params)
 grads_norms = T.sqrt([T.sum(g ** 2) for g in all_grads])
 scaled_grads = nn.updates.total_norm_constraint(all_grads, max_norm=10, return_norm=False)
 
@@ -151,17 +145,13 @@ updates = nn.updates.nesterov_momentum(scaled_grads, all_params, learning_rate=l
 
 # Compile functions
 print('...compiling')
-train = theano.function([x, y], (train_hybrid_loss, train_accuracy, train_kappa_loss), updates=updates, on_unused_input='warn')
-validate = theano.function([x, y], (valid_loss, valid_accuracy), on_unused_input='warn')
+train = theano.function([x, y], (train_log_loss, train_accuracy, train_kappa), updates=updates, on_unused_input='warn')
+validate = theano.function([x, y], (valid_log_loss, valid_accuracy, valid_kappa), on_unused_input='warn')
 
 
 # Training Loop
 print '...training'
 sys.stdout.flush()
-
-patience = 10000
-patience_increase = 2
-improvement_threshold = 1.05
 
 best_valid_loss_avg = -np.inf
 best_iter = 0
@@ -169,11 +159,10 @@ best_iter = 0
 start_time_all = time()
 
 epoch = 0
-done_looping = False
 n_train_batches = n_train / batch_size
 n_valid_batches = n_valid / batch_size
 
-while (epoch < n_epochs) and (not done_looping):
+while epoch < n_epochs:
     epoch = epoch + 1
     train_loss_list = []
     train_acc_list = []
@@ -190,54 +179,49 @@ while (epoch < n_epochs) and (not done_looping):
 
         # start iteration
         iter_start = time()
-        t_hybrid_loss, t_acc, t_kappa = train(train_X, train_y)
-        train_loss_list.append(t_hybrid_loss)
+        t_log_loss, t_acc, t_kappa = train(train_X, train_y)
+        train_loss_list.append(t_log_loss)
         train_acc_list.append(t_acc)
         train_kappa_list.append(-t_kappa)
-        print('... [epoch:%d/iter:%d] train_model(lr:%f) w/ minibatch(size:%d) hybrid_loss: %.2f, kappa_score: %.2f, accuracy: %.2f %% - Elapsed time: %.2fs' % (epoch, iter + 1, lr.get_value(), batch_size, t_hybrid_loss, -t_kappa, t_acc * 100., time() - iter_start))
-        sys.stdout.flush()
+        if iter % 10 == 0:
+            print('[epoch:%d/iter:%d] train_model(lr:%f) w/ minibatch(size:%d) log_loss: %.2f, kappa_score: %.2f, accuracy: %.2f %% - Elapsed time: %.2fs' % (epoch, iter + 1, lr.get_value(), batch_size, t_log_loss, -t_kappa, t_acc * 100., time() - iter_start))
+            sys.stdout.flush()
 
         # validate
         if (iter + 1) % validate_every == 0:
             valid_loss_list = []
             valid_acc_list = []
+            valid_kappa_list = []
             for i in xrange(n_valid_batches):
                 valid_X, valid_y = valid_iter.next()
-                v_loss, v_acc = validate(valid_X, valid_y)
-                valid_loss_list.append(-v_loss)
+                v_log_loss, v_acc, v_kappa = validate(valid_X, valid_y)
+                valid_loss_list.append(v_log_loss)
                 valid_acc_list.append(v_acc)
+                valid_kappa_list.append(-v_kappa)
             valid_loss_avg = np.mean(valid_loss_list)
             valid_acc_avg = np.mean(valid_acc_list)
-            print('Validation --> [epoch:%d minibatch %i/%i, kappa_score: %.2f, accuracy: %.2f %%'
-                    % (epoch, minibatch_index + 1, n_train_batches, valid_loss_avg, valid_acc_avg * 100.))
+            valid_kappa_avg = np.mean(valid_kappa_list)
+            print('Validation --> [epoch:%d minibatch %i/%i, log_loss: %.2f, kappa_score: %.2f, accuracy: %.2f %%'
+                    % (epoch, minibatch_index + 1, n_train_batches, valid_loss_avg, valid_kappa_avg, valid_acc_avg * 100.))
             # update the best validation score
             if valid_loss_avg > best_valid_loss_avg:
-                # increase patience if the improvement is good enough
-                if valid_loss_avg > best_valid_loss_avg * improvement_threshold:
-                    patience = max(patience, iter * patience_increase)
-
                 # save best validation score and iteration number
                 best_valid_loss_avg = valid_loss_avg
                 best_iter = iter
 
-        # early stopping
-        if patience <= iter:
-            done_looping = True
-            break
-
     # end of one epoch / report scores
-    print('    [epoch:%d] average train_hybrid_loss: %.2f, average train_kappa: %.2f, average train_accuracy %.2f %%'
+    print('[epoch:%d] --> average train_hybrid_loss: %.2f, average train_kappa: %.2f, average train_accuracy %.2f %%'
             % (epoch, np.mean(train_loss_list), np.mean(train_kappa_list), np.mean(train_acc_list)))
 
     # save model
     if epoch % save_every == 0:
-        print('    [save] %s' % os.path.join(dst_path, 'trained_net.epoch%03d.pkl' % epoch))
+        print('[save] %s' % os.path.join(dst_path, 'trained_net.epoch%03d.pkl' % epoch))
         if not os.path.exists(dst_path):
             os.makedirs(dst_path)
             write_params(output_layer, os.path.join(dst_path, 'trained_net.epoch%03d.pkl' % epoch))
 
-    if epoch % lr_decay_period == 0:
-        lr.set_value(lr.get_value() * lr_decay)
+    if epoch in lr_schedule:
+        lr.set_value(lr_schedule[epoch])
 
 print('>> Training Complete')
 

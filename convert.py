@@ -60,6 +60,7 @@ def main(datadir, convert_dir, crop_size):
         p.map(convert, args[i * batch_size : (i + 1) * batch_size])
 
     p.close()
+    p.join()
     print('Done')
 
 if __name__ == '__main__':
