@@ -11,6 +11,12 @@ def log_loss(y, t, eps=1e-15):
     loss = -T.sum(t * T.log(y)) / y.shape[0].astype(theano.config.floatX)
     return loss
 
+def squared_loss(y, t, num_class=None):
+    if num_class:
+        target = T.cast(T.argmax(t, axis=1) / (num_class - 1.0), 'float32')
+    else:
+        target = T.cast(T.argmax(t, axis=1), 'float32')
+    return (y - target) ** 2
 
 def accuracy(y, t, eps=1e-15):
     y_ = T.cast(T.argmax(y, axis=1), 'int32')
@@ -55,5 +61,3 @@ def quad_kappa_log_hybrid_loss_clipped(y, t, y_pow=2, log_cutoff=0.9, log_scale=
     return kappa_loss_res + log_scale * T.clip(log_loss_res, log_cutoff, 10 ** 3)
 
 
-def mse(y, t):
-    return T.mean((y - t) ** 2)

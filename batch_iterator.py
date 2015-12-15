@@ -19,7 +19,7 @@ class BatchIterator(object):
             #self.std = np.load(std)
 
         if process_func is None:
-            process_func = lambda x: x
+            process_func = lambda x, y, z: x
         self.process_func = process_func
 
         if not self.testing:
