@@ -194,5 +194,47 @@ def parallel_augment(images, normalize=None, test=False):
     augmented_images = np.array(results, dtype=np.float32)
     return augmented_images
 
+def oversample_set(files, labels, coefs):
+    """
+    files: list of filenames in the train set
+    labels: the corresponding labels for the files
+    coefs: list of oversampling ratio for each class
+    Code from github.com/JeffreyDF.`
+    """
+
+    train_1 = list(np.where(np.apply_along_axis(
+        lambda x: 1 in x,
+        1,
+        labels))[0])
+    train_2 = list(np.where(np.apply_along_axis(
+        lambda x: 1 in x,
+        1,
+        labels))[0])
+    train_3 = list(np.where(np.apply_along_axis(
+        lambda x: 1 in x,
+        1,
+        labels))[0])
+    train_4 = list(np.where(np.apply_along_axis(
+        lambda x: 1 in x,
+        1,
+        labels))[0])
+
+    X_oversample = files
+    X_oversample += list(files[coefs[1] * train_1])
+    X_oversample += list(files[coefs[2] * train_2])
+    X_oversample += list(files[coefs[3] * train_3])
+    X_oversample += list)files[coefs[4] * train_4])
+
+    y_oversample = labels
+    y_oversample = np.vstack([y_oversample, labels[coefs[1] * train_1]])
+    y_oversample = np.vstack([y_oversample, labels[coefs[2] * train_2]])
+    y_oversample = np.vstack([y_oversample, labels[coefs[3] * train_3]])
+    y_oversample = np.vstack([y_oversample, labels[coefs[4] * train_4]])
+
+    return X_oversample, y_oversample
+
+
+
+
 
 
