@@ -17,6 +17,9 @@ class BatchIterator(object):
             self.mean, self.std = normalize
             #self.mean = np.load(mean)
             #self.std = np.load(std)
+        else:
+            self.mean = 0
+            self.std = 1
 
         if process_func is None:
             process_func = lambda x, y, z: x
