@@ -8,7 +8,7 @@ def read_params(model, filename):
     Unpickles and loads parameters into a Lasagne model.
     """
     with open(filename, 'r') as f:
-        params = pickle.load(f, protocol=pickle.HIGHEST_PROTOCOL)
+        params = pickle.load(f)
     nn.layers.set_all_param_values(model, params)
 
 def write_params(model, filename):
