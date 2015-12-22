@@ -180,6 +180,13 @@ def build_model(input_var):
     drop_2 = nn.layers.DropoutLayer(layers[-1], p=0.5)
     layers.append(drop_2)
 
+    fc_2 = DenseLayer(layers[-1],
+                      num_units=1024,
+                      nonlinearity=LeakyRectify(leakiness),
+                      W=nn.init.Orthogonal(1.0),
+                      b=nn.init.Constant(0.1))
+    layers.append(fc_2)
+
     pool_7 = nn.layers.FeaturePoolLayer(layers[-1],
                                         pool_size=2,
                                         pool_function=T.max)
