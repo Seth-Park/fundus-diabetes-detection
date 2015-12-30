@@ -33,11 +33,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import theano
 import theano.tensor as T
 
-from .. import init
-from .. import nonlinearities
-
-from .base import Layer
-
+from lasagne import init
+from lasagne import nonlinearities
+from lasagne.layers.base import Layer
 
 
 class BatchNormLayer(Layer):
@@ -291,6 +289,6 @@ def batch_norm(layer, **kwargs):
         layer.b = None
     layer = BatchNormLayer(layer, **kwargs)
     if nonlinearity is not None:
-        from .special import NonlinearityLayer
+        from lasagne.layers.special import NonlinearityLayer
         layer = NonlinearityLayer(layer, nonlinearity)
     return layer

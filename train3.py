@@ -45,9 +45,9 @@ l2_reg = 0.0002
 
 
 # training configs
-batch_size = 64
-lr = theano.shared(np.array(0.01, dtype=theano.config.floatX))
-lr_schedule = {4 : 0.01, 40 : 0.005, 70 : 0.001, 100 : 0.0005, 130: 0.0001 }
+batch_size = 32
+lr = theano.shared(np.array(0.0005, dtype=theano.config.floatX))
+lr_schedule = {2 : 0.01, 40 : 0.005, 70 : 0.001, 100 : 0.0005, 130: 0.0001 }
 n_epochs = 60
 momentum = 0.9
 validate_every = 100 # iterations
@@ -57,10 +57,10 @@ save_every = 20 # epochs
 data_dir = "/nikel/dhpark/fundus/kaggle/original/training/train_medium"
 label_file = "/nikel/dhpark/fundus/kaggle/original/training/trainLabels.csv"
 #mean_file = ""
-model = "models/softmax_regression"
+model = "models/multitask_bn"
 #model = "models/double_softmax"
 #model = "models/512x512_model"
-dst_path = "/nikel/dhpark/fundus_saved_weights/multi_task_loss_oversampled"
+dst_path = "/nikel/dhpark/fundus_saved_weights/multi_task_loss_bn"
 #dst_path = "/nikel/dhpark/fundus_saved_weights/hybrid_loss"
 
 
@@ -128,7 +128,7 @@ def multi_task_loss(y, t):
     regress_predictions = squared_loss(y[:, -1], t)
     log_loss = softmax_predictions.mean()
     reg_loss = regress_predictions.mean()
-    return log_loss, reg_loss, log_loss + reg_loss
+    return log_loss, reg_loss, log_loss + 0.1 * reg_loss
 
 def hybrid_loss(y, t):
     log_loss = categorical_crossentropy(y, t).mean()
@@ -136,7 +136,7 @@ def hybrid_loss(y, t):
     return kappa_loss + 0.5 * T.clip(log_loss, 0.6, 10 ** 3)
 
 
-predictions = nn.layers.get_output(output_layer)
+predictions = nn.layers.get_output(output_layer, deterministic=True)
 train_log_loss, train_reg_loss, train_multi_loss = multi_task_loss(predictions, y)
 #train_loss1 = categorical_crossentropy(predictions[:, :num_class], y).mean()
 #train_loss2 = categorical_crossentropy(predictions[:, num_class:], y).mean()
@@ -166,10 +166,10 @@ valid_kappa = quad_kappa_loss(valid_predictions[:, :num_class], y)
 # Scale grads
 all_params = nn.layers.get_all_params(output_layer, trainable=True)
 all_grads = T.grad(train_loss, all_params)
-scaled_grads = nn.updates.total_norm_constraint(all_grads, max_norm=10, return_norm=False)
+#scaled_grads = nn.updates.total_norm_constraint(all_grads, max_norm=10, return_norm=False)
 
 # Construct update
-updates = nn.updates.nesterov_momentum(scaled_grads, all_params, learning_rate=lr, momentum=momentum)
+updates = nn.updates.nesterov_momentum(all_grads, all_params, learning_rate=lr, momentum=momentum)
 #updates = nn.updates.adam(all_grads, all_params, learning_rate=0.0001)
 
 # Compile functions
@@ -277,7 +277,7 @@ while epoch < n_epochs:
         write_params(output_layer, os.path.join(dst_path, 'trained_net_epoch%d.pkl' % epoch))
 
     if epoch % 2 == 0:
-        lr.set_value(lr.get_value() * 0.9)
+        lr.set_value(np.array(lr.get_value() * 0.9, dtype=theano.config.floatX))
 
 print('>> Training Complete')
 
