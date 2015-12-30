@@ -27,6 +27,25 @@ def get_image_files(datadir, left_only=False, shuffle=False):
         return shuffle(files)
     return sorted(files)
 
+def pair_up(files, labels):
+    """
+    Assuming that files are sorted,
+    return a list of tuples with files of the same patient paired together
+    and the corresponding labels.
+    """
+    paired_files = []
+    merged_labels = []
+    while len(files) != 0:
+        if len(files) == 1:
+            paired_files.append((files[0], files[0]))
+            merged_labels.append(labels[0])
+        else:
+            paired_files.append((files[0], files[1]))
+            merged_labels.append(labels[0])
+        files = files[2:]
+        labels = labels[2:]
+    return paired_files, merged_labels
+
 
 def get_names(files):
     return [os.path.basename(x).split('.')[0] for x in files]
