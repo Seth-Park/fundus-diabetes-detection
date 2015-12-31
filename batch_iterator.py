@@ -3,6 +3,7 @@ from Queue import Queue
 import threading
 from time import time
 import data_util
+import pdb
 
 class BatchIterator(object):
 
@@ -61,29 +62,28 @@ class BatchIterator(object):
 
 class PairedBatchIterator(BatchIterator):
 
-    def unzip(files, labels):
-        left = []
-        right = []
-        left_labels = []
-        right_labels = []
-        for image_pair, label in zip(files, labels):
-            left.append(image_pair[0])
-            right.append(image_pair[1])
-            left_labels.append(label)
-            right_labels.append(label)
-        merged_img = left.extend(right)
-        merged_labels = left_labels.extend(right_labels)
-        return np.array(merged_img), np.array(merged_labels)
-
     def next(self):
         batch_idx = self.get_permuted_batch_idx()
         batch_files = self.files[batch_idx]
         batch_labels = self.labels[batch_idx]
-        batch_files, batch_y = unzip(batch_files, batch_labels)
+        batch_files, batch_y = unpack(batch_files, batch_labels)
         batch_X = data_util.load_images(batch_files)
         batch_X = self.process_func(batch_X, (self.mean, self.std), self.testing)
         return (batch_X, batch_y)
 
+def unpack(files, labels):
+    left = []
+    right = []
+    left_labels = []
+    right_labels = []
+    for image_pair, label in zip(files, labels):
+        left.append(image_pair[0])
+        right.append(image_pair[1])
+        left_labels.append(label)
+        right_labels.append(label)
+    left.extend(right)
+    left_labels.extend(right_labels)
+    return left, np.array(left_labels)
 
 def threaded_iterator(iterator, num_cached=50):
     queue = Queue(maxsize=num_cached)

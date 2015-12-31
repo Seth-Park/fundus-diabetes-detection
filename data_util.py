@@ -44,7 +44,7 @@ def pair_up(files, labels):
             merged_labels.append(labels[0])
         files = files[2:]
         labels = labels[2:]
-    return paired_files, merged_labels
+    return paired_files, np.array(merged_labels)
 
 
 def get_names(files):
