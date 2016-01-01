@@ -64,7 +64,7 @@ class PairedBatchIterator(BatchIterator):
 
     def __init__(self, files, labels, batch_size, normalize=None, process_func=None, testing=None):
         self.files = np.array(files)
-        self.labels = labels
+        self.labels = np.array(labels)
         self.n = len(files)
         self.batch_size = batch_size // 2
         self.testing = testing
@@ -105,11 +105,11 @@ def unpack(files, labels):
     right = []
     left_labels = []
     right_labels = []
-    for image_pair, label in zip(files, labels):
+    for image_pair, label_pair in zip(files, labels):
         left.append(image_pair[0])
         right.append(image_pair[1])
-        left_labels.append(label)
-        right_labels.append(label)
+        left_labels.append(label_pair[0])
+        right_labels.append(label_pair[1])
     left.extend(right)
     left_labels.extend(right_labels)
     return left, np.array(left_labels)

@@ -31,20 +31,21 @@ def pair_up(files, labels):
     """
     Assuming that files are sorted,
     return a list of tuples with files of the same patient paired together
-    and the corresponding labels.
+    and the corresponding one-hot-encoded labels.
     """
     paired_files = []
+    paired_labels = []
     merged_labels = []
+    one_hot_encoded = one_hot(labels)
     while len(files) != 0:
-        if len(files) == 1:
-            paired_files.append((files[0], files[0]))
-            merged_labels.append(labels[0])
-        else:
-            paired_files.append((files[0], files[1]))
-            merged_labels.append(labels[0])
+        paired_files.append((files[0], files[1]))
+        index = np.random.randint(2)
+        merged_labels.append(labels[index])
+        paired_labels.append((one_hot_encoded[0], one_hot_encoded[1]))
         files = files[2:]
         labels = labels[2:]
-    return paired_files, np.array(merged_labels)
+        one_hot_encoded = one_hot_encoded[2:]
+    return paired_files, paired_labels, np.array(merged_labels)
 
 
 def get_names(files):
@@ -254,6 +255,46 @@ def oversample_set(files, labels, coefs):
     return X_oversample, y_oversample
 
 
+def oversample_set_pairwise(files, labels, merged, coefs):
+    """
+    files: list of paired filenames in the train set
+    labels: the corresponding label pairs for the file pairs
+    merged: merged labels
+    coefs: list of oversampling ratio for each class
+    Code modified from github.com/JeffreyDF.`
+    """
+
+    train_1 = list(np.where(np.apply_along_axis(
+        lambda x: 1 == x,
+        0,
+        merged))[0])
+    train_2 = list(np.where(np.apply_along_axis(
+        lambda x: 2 == x,
+        0,
+        merged))[0])
+    train_3 = list(np.where(np.apply_along_axis(
+        lambda x: 3 == x,
+        0,
+        merged))[0])
+    train_4 = list(np.where(np.apply_along_axis(
+        lambda x: 4 == x,
+        0,
+        merged))[0])
+
+    print(len(train_1), len(train_2), len(train_3), len(train_4))
+    X_oversample = list(files)
+    X_oversample += list(np.array(files)[coefs[1] * train_1])
+    X_oversample += list(np.array(files)[coefs[2] * train_2])
+    X_oversample += list(np.array(files)[coefs[3] * train_3])
+    X_oversample += list(np.array(files)[coefs[4] * train_4])
+
+    y_oversample = list(labels)
+    y_oversample += list(np.array(labels)[coefs[1] * train_1])
+    y_oversample += list(np.array(labels)[coefs[2] * train_2])
+    y_oversample += list(np.array(labels)[coefs[3] * train_3])
+    y_oversample += list(np.array(labels)[coefs[4] * train_4])
+
+    return X_oversample, y_oversample
 
 
 

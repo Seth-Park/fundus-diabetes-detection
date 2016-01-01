@@ -25,7 +25,7 @@ def build_model(input_var):
     layers = []
 
     input_layer = nn.layers.InputLayer(
-            shape=(None, num_channels, input_width, input_height),
+            shape=(batch_size, num_channels, input_width, input_height),
             input_var=input_var,
             name='inputs'
     )
