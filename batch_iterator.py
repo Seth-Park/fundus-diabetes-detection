@@ -33,7 +33,7 @@ class BatchIterator(object):
 
 
         self.indices = self.create_index()
-        assert self.n > self.batch_size
+        assert self.n >= self.batch_size
 
 
     def __iter__(self):
@@ -61,6 +61,35 @@ class BatchIterator(object):
         return (batch_X, batch_y)
 
 class PairedBatchIterator(BatchIterator):
+
+    def __init__(self, files, labels, batch_size, normalize=None, process_func=None, testing=None):
+        self.files = np.array(files)
+        self.labels = labels
+        self.n = len(files)
+        self.batch_size = batch_size // 2
+        self.testing = testing
+
+        if normalize is not None:
+            self.mean, self.std = normalize
+            #self.mean = np.load(mean)
+            #self.std = np.load(std)
+        else:
+            self.mean = 0
+            self.std = 1
+
+        if process_func is None:
+            process_func = lambda x, y, z: x
+        self.process_func = process_func
+
+        if not self.testing:
+            self.create_index = lambda: np.random.permutation(self.n)
+        else:
+            self.create_index = lambda: range(self.n)
+
+
+        self.indices = self.create_index()
+        assert self.n >= self.batch_size
+
 
     def next(self):
         batch_idx = self.get_permuted_batch_idx()
