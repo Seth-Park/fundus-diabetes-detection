@@ -18,7 +18,7 @@ def squared_loss(y, t, num_class=None):
         target = T.cast(T.argmax(t, axis=1), 'float32')
     return (y - target) ** 2
 
-def accuracy(y, t, eps=1e-15):
+def accuracy(y, t):
     y_ = T.cast(T.argmax(y, axis=1), 'int32')
     t_ = T.cast(T.argmax(t, axis=1), 'int32')
 
@@ -26,7 +26,7 @@ def accuracy(y, t, eps=1e-15):
     return T.mean(T.eq(y_, t_))
 
 
-def quad_kappa_loss(y, t, y_pow=1, eps=1e-15):
+def quad_kappa(y, t, y_pow=2, eps=1e-15):
     num_scored_items = y.shape[0]
     num_ratings = 5
     tmp = T.tile(T.arange(0, num_ratings).reshape((num_ratings, 1)),
@@ -46,7 +46,7 @@ def quad_kappa_loss(y, t, y_pow=1, eps=1e-15):
                                       hist_rater_b.reshape((1, num_ratings))) /
                   num_scored_items.astype(theano.config.floatX))
 
-    return - (1 - nom / denom)
+    return (1 - nom / denom)
 
 
 def quad_kappa_log_hybrid_loss(y, t, y_pow=1, log_scale=0.5, log_offset=0.50):

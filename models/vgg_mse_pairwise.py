@@ -13,9 +13,9 @@ DenseLayer = nn.layers.DenseLayer
 
 input_size = 512
 input_height, input_width = (input_size, input_size)
-output_dim = 5
+output_dim = 1
 num_channels = 3
-batch_size = 64
+batch_size = 16
 
 leakiness = 0.5
 
@@ -194,13 +194,8 @@ def build_model(input_var):
     layers.append(fc_3)
 
     split_eyes = nn.layers.ReshapeLayer(layers[-1],
-                                        shape=(batch_size, 5))
+                                        shape=(batch_size, ))
     layers.append(split_eyes)
 
-    softmax_layer = nn.layers.NonlinearityLayer(layers[-1],
-                                          nonlinearity=nn.nonlinearities.softmax)
-
-    layers.append(softmax_layer)
-
-    return input_layer, softmax_layer
+    return input_layer, split_eyes
 

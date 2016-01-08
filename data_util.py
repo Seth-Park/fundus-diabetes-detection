@@ -27,7 +27,7 @@ def get_image_files(datadir, left_only=False, shuffle=False):
         return shuffle(files)
     return sorted(files)
 
-def pair_up(files, labels):
+def pair_up(files, labels, onehot=True):
     """
     Assuming that files are sorted,
     return a list of tuples with files of the same patient paired together
@@ -36,15 +36,18 @@ def pair_up(files, labels):
     paired_files = []
     paired_labels = []
     merged_labels = []
-    one_hot_encoded = one_hot(labels)
+    if onehot:
+        lab = one_hot(labels)
+    else:
+        lab = np.array(labels)
     while len(files) != 0:
         paired_files.append((files[0], files[1]))
         index = np.random.randint(2)
         merged_labels.append(labels[index])
-        paired_labels.append((one_hot_encoded[0], one_hot_encoded[1]))
+        paired_labels.append((lab[0], lab[1]))
         files = files[2:]
         labels = labels[2:]
-        one_hot_encoded = one_hot_encoded[2:]
+        lab = lab[2:]
     return paired_files, paired_labels, np.array(merged_labels)
 
 

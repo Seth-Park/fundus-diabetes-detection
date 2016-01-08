@@ -186,21 +186,34 @@ def build_model(input_var):
     drop_3 = nn.layers.DropoutLayer(layers[-1], p=0.5)
     layers.append(drop_3)
 
-    fc_3 = DenseLayer(layers[-1],
+    fc_3 = DenseLayer(drop_3,
                       num_units=output_dim * 2,
                       nonlinearity=None,
                       W=nn.init.Orthogonal(1.0),
                       b=nn.init.Constant(0.1))
     layers.append(fc_3)
 
-    split_eyes = nn.layers.ReshapeLayer(layers[-1],
-                                        shape=(batch_size, 5))
-    layers.append(split_eyes)
+    fc_4 = DenseLayer(drop_3,
+                      num_units=2,
+                      nonlinearity=None,
+                      W=nn.init.Orthogonal(1.0),
+                      b=nn.init.Constant(0.1))
+    layers.append(fc_4)
 
-    softmax_layer = nn.layers.NonlinearityLayer(layers[-1],
+    split_eyes_softmax = nn.layers.ReshapeLayer(fc_3,
+                                        shape=(batch_size, output_dim))
+    layers.append(split_eyes_softmax)
+
+    regression_layer = nn.layers.ReshapeLayer(fc_4,
+                                        shape=(batch_size, 1))
+    layers.append(regression_layer)
+
+    softmax_layer = nn.layers.NonlinearityLayer(split_eyes_softmax,
                                           nonlinearity=nn.nonlinearities.softmax)
 
     layers.append(softmax_layer)
 
-    return input_layer, softmax_layer
+    output = nn.layers.merge.ConcatLayer([softmax_layer, regression_layer])
+
+    return input_layer, output
 

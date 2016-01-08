@@ -11,7 +11,7 @@ import theano.tensor as T
 import lasagne as nn
 from sklearn.cross_validation import StratifiedShuffleSplit
 
-from lasagne.objectives import categorical_crossentropy
+from lasagne.objectives import categorical_crossentropy, squared_error
 from losses import (log_loss,
                     accuracy,
                     squared_loss,
@@ -45,7 +45,7 @@ l2_reg = 0.0002
 
 
 # training configs
-batch_size = 64
+batch_size = 16
 lr = theano.shared(np.array(0.005, dtype=theano.config.floatX))
 lr_schedule = {2 : 0.005, 10 : 0.003, 20 : 0.001, 30 : 0.0005, 40: 0.0001 }
 n_epochs = 30
@@ -59,9 +59,9 @@ label_file = "/nikel/dhpark/fundus/kaggle/original/training/trainLabels.csv"
 #mean_file = ""
 #model = "models/softmax_regression"
 #model = "models/double_softmax"
-model = "models/512x512_model"
+model = "models/vgg_mse_pairwise"
 #model = "models/vgg_bn_pairwise"
-dst_path = "/nikel/dhpark/fundus_saved_weights/vgg_pairwise"
+dst_path = "/nikel/dhpark/fundus_saved_weights/vgg_mse_pairwise"
 #dst_path = "/nikel/dhpark/fundus_saved_weights/multi_task_loss_oversampled"
 #dst_path = "/nikel/dhpark/fundus_saved_weights/hybrid_loss"
 #dst_path = "/nikel/dhpark/fundus_saved_weights/vgg_bn_pairwise"
@@ -69,7 +69,7 @@ dst_path = "/nikel/dhpark/fundus_saved_weights/vgg_pairwise"
 
 # Load the model
 x = T.tensor4('x')
-y = T.imatrix('y')
+y = T.ivector('y')
 input_layer, output_layer = load_model(model).build_model(x)
 
 # Get batchiterator
@@ -80,7 +80,7 @@ names = data_util.get_names(files)
 labels = data_util.get_labels(names, label_file=label_file).astype(np.int32)
 print('{} files loaded'.format(len(files)))
 
-paired_files, paired_labels, merged_labels = data_util.pair_up(files, labels)
+paired_files, paired_labels, merged_labels = data_util.pair_up(files, labels, one_hot=False)
 
 sss = StratifiedShuffleSplit(merged_labels, n_iter=1, test_size=0.1, random_state=123)
 train_idx, valid_idx = next(iter(sss))
@@ -100,7 +100,7 @@ print('Oversampled set size: {}'.format(n_train))
 #mean = data_util.compute_mean_across_channels(train_files)
 #mean.dump('mean.pkl')
 #print('Computing std...')
-#std = data_util.compute_mean_across_channels(train_files)
+#std = data_util.compute_std_across_channels(train_files)
 #std.dump('std.pkl')
 mean = np.load('mean.pkl')
 std = np.load('std.pkl')
@@ -110,6 +110,7 @@ valid_labels = np.array(paired_labels)[valid_idx].tolist()
 n_valid = len(valid_files) * 2
 print('Validation set size: {}'.format(n_valid))
 
+# if training on mse loss, make sure the iterator returns a float32 as its labels
 train_iter = PairedBatchIterator(train_files,
                                  train_labels,
                                  batch_size,
@@ -127,32 +128,25 @@ valid_iter = threaded_iterator(valid_iter)
 
 
 # Construct loss function & accuracy
-def multi_task_loss(y, t):
-    softmax_predictions = categorical_crossentropy(y[:, :num_class], t)
-    regress_predictions = squared_loss(y[:, -1], t)
-    log_loss = softmax_predictions.mean()
-    reg_loss = regress_predictions.mean()
-    return log_loss, reg_loss, 0.75*log_loss + 0.25*reg_loss
-
-def hybrid_loss(y, t):
-    log_loss = categorical_crossentropy(y, t).mean()
-    kappa_loss = quad_kappa_loss(y, t, y_pow=2)
-    return kappa_loss + 0.5 * T.clip(log_loss, 0.6, 10 ** 3)
-
+def discrete_predict(predictions):
+    return T.cast(T.round(T.clip(predictions, 0, 4)), 'int32')
 
 predictions = nn.layers.get_output(output_layer, deterministic=False)
-log_loss = categorical_crossentropy(predictions, y).mean()
+mse_loss = squared_error(predictions, y).mean()
 params = nn.layers.get_all_params(output_layer, regularizable=True)
 regularization = sum(T.sum(p ** 2) for p in params)
-train_loss = log_loss + l2_reg * regularization
-train_accuracy = accuracy(predictions, y)
-train_kappa = quad_kappa(predictions, y)
+train_loss = mse_loss + l2_reg * regularization
+one_hot_pred = T.eye(num_class, dtype='int32')[discrete_predict(predictions)]
+one_hot_target = T.eye(num_class, dtype='int32')[y]
+train_accuracy = accuracy(one_hot_pred, one_hot_target)
+train_kappa = quad_kappa(one_hot_pred, one_hot_target)
 
 
 valid_predictions = nn.layers.get_output(output_layer, deterministic=True)
-valid_loss = categorical_crossentropy(valid_predictions, y).mean()
-valid_accuracy = accuracy(valid_predictions, y)
-valid_kappa = quad_kappa(valid_predictions, y)
+valid_loss = squared_error(valid_predictions, y).mean()
+one_hot_pred_val = T.eye(num_class)[discrete_predict(valid_predictions)]
+valid_accuracy = accuracy(one_hot_pred_val, one_hot_target)
+valid_kappa = quad_kappa(one_hot_pred_val, one_hot_target)
 
 # Scale grads
 all_params = nn.layers.get_all_params(output_layer, trainable=True)

@@ -64,7 +64,7 @@ class PairedBatchIterator(BatchIterator):
 
     def __init__(self, files, labels, batch_size, normalize=None, process_func=None, testing=None):
         self.files = np.array(files)
-        self.labels = np.array(labels)
+        self.labels = np.array(labels).astype(np.int32)
         self.n = len(files)
         self.batch_size = batch_size // 2
         self.testing = testing

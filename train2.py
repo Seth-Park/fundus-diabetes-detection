@@ -14,7 +14,6 @@ from sklearn.cross_validation import StratifiedShuffleSplit
 from lasagne.objectives import categorical_crossentropy
 from losses import (log_loss,
                     accuracy,
-                    quad_kappa_loss,
                     quad_kappa_log_hybrid_loss,
                     quad_kappa_log_hybrid_loss_clipped)
 
@@ -86,9 +85,10 @@ print('Training set size: {}'.format(n_train))
 #print('Computing mean...')
 #mean = data_util.compute_mean_across_channels(train_files)
 #mean.dump('mean.pkl')
-#print('Computing std...')
-#std = data_util.compute_mean_across_channels(train_files)
-#std.dump('std.pkl')
+print('Computing std...')
+std = data_util.compute_std_across_channels(train_files)
+std.dump('std.pkl')
+pdb.set_trace()
 mean = np.load('mean.pkl')
 std = np.load('std.pkl')
 
