@@ -19,12 +19,12 @@ While being prefetched, data is normalized and randomly augmented (rotate, flip,
 There are two images per patient (left eye / right eye). To take this fact into account, the dense representations of the two eyes after the convolutional layers are concatenated before the last two fully-connected layers.
 
 ## Ideas Tried
-Dropout
-All Convolutional Network (http://arxiv.org/abs/1412.6806)
-Multitask Learning (Optimizing for both classification and regression task)
-Deep Residual Network (http://arxiv.org/abs/1512.03385)
-Maxout Network (http://arxiv.org/abs/1302.4389)
-Batch Normalization (http://arxiv.org/abs/1502.03167)
-Leaky ReLU (http://arxiv.org/abs/1505.00853)
+- Dropout
+- All Convolutional Network (http://arxiv.org/abs/1412.6806)
+- Multitask Learning (Optimizing for both classification and regression task)
+- Deep Residual Network (http://arxiv.org/abs/1512.03385)
+- Maxout Network (http://arxiv.org/abs/1302.4389)
+- Batch Normalization (http://arxiv.org/abs/1502.03167)
+- Leaky ReLU (http://arxiv.org/abs/1505.00853)
 
 
