@@ -53,7 +53,7 @@ validate_every = 100 # iterations
 save_every = 20 # epochs
 
 # paths
-data_dir = "/nikel/dhpark/fundus/kaggle/original/training/train_medium"
+data_dir = "/nikel/dhpark/fundus/kaggle/original/training/train_small"
 label_file = "/nikel/dhpark/fundus/kaggle/original/training/trainLabels.csv"
 #mean_file = ""
 model = "models/512x512_model"
@@ -82,12 +82,12 @@ train_labels = one_hot(train_labels)
 n_train = len(train_files)
 print('Training set size: {}'.format(n_train))
 
-#print('Computing mean...')
-#mean = data_util.compute_mean_across_channels(train_files)
-#mean.dump('mean.pkl')
+print('Computing mean...')
+mean = data_util.compute_mean_across_channels(train_files)
+mean.dump('mean_256.pkl')
 print('Computing std...')
 std = data_util.compute_std_across_channels(train_files)
-std.dump('std.pkl')
+std.dump('std_256.pkl')
 pdb.set_trace()
 mean = np.load('mean.pkl')
 std = np.load('std.pkl')

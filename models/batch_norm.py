@@ -284,7 +284,7 @@ def batch_norm(layer, **kwargs):
     nonlinearity = getattr(layer, 'nonlinearity', None)
     if nonlinearity is not None:
         layer.nonlinearity = nonlinearities.identity
-    if hasattr(layer, 'b'):
+    if hasattr(layer, 'b') and layer.b is not None:
         del layer.params[layer.b]
         layer.b = None
     layer = BatchNormLayer(layer, **kwargs)

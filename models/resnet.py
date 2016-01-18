@@ -14,14 +14,14 @@ from lasagne.layers import GlobalPoolLayer
 from lasagne.layers import PadLayer
 from lasagne.layers import NonlinearityLayer
 
-from batcn_norm import *
+from batch_norm import *
 
 ##### Network Config #####
-input_size = 512
-input_height, input_width = input_size, input_size
+input_size = 256
+input_height, input_width = (input_size, input_size)
 output_dim = 5
 num_channels = 3
-batch_size = 64
+batch_size = 16
 num_blocks = [3, 4, 6, 3]
 
 ##### Build ResNet #####
@@ -30,7 +30,7 @@ def build_model(input_var):
     # Three layer residual block
     def residual_block3(l, base_dim, increase_dim=False, projection=False):
         if increase_dim:
-            layer_1 = batcn_norm(ConvLayer(l,
+            layer_1 = batch_norm(ConvLayer(l,
                                            num_filters=base_dim,
                                            filter_size=(1, 1),
                                            stride=(2, 2),
@@ -38,21 +38,21 @@ def build_model(input_var):
                                            pad='same',
                                            W=nn.init.HeNormal(gain='relu')))
         else:
-            layer_1 = batcn_norm(ConvLayer(l,
+            layer_1 = batch_norm(ConvLayer(l,
                                            num_filters=base_dim,
                                            filter_size=(1, 1),
                                            stride=(1, 1),
                                            nonlinearity=rectify,
                                            pad='same',
                                            W=nn.init.HeNormal(gain='relu')))
-        layer_2 = batch_norm(ConvLayer(layer1,
+        layer_2 = batch_norm(ConvLayer(layer_1,
                                        num_filters=base_dim,
                                        filter_size=(3, 3),
                                        stride=(1, 1),
                                        nonlinearity=rectify,
                                        pad='same',
                                        W=nn.init.HeNormal(gain='relu')))
-        layer_3 = batch_norm(ConvLayer(layer2,
+        layer_3 = batch_norm(ConvLayer(layer_2,
                                        num_filters=4*base_dim,
                                        filter_size=(1, 1),
                                        stride=(1, 1),
@@ -64,7 +64,7 @@ def build_model(input_var):
         if increase_dim:
             if projection:
                 # projection shortcut (option B in paper)
-                projection = batcn_norm(ConvLayer(l,
+                projection = batch_norm(ConvLayer(l,
                                                   num_filters=4*base_dim,
                                                   filter_size=(1, 1),
                                                   stride=(2, 2),
@@ -108,8 +108,17 @@ def build_model(input_var):
     # Maxpool layer
     l = MaxPoolLayer(l, pool_size=(3, 3), stride=(2, 2))
 
+    # Convolove with 1x1 filter to match input dimension with the upcoming residual block
+    l = batch_norm(ConvLayer(l,
+                             num_filters=256,
+                             filter_size=(1, 1),
+                             stride=(1, 1),
+                             nonlinearity=rectify,
+                             pad='same',
+                             W=nn.init.HeNormal(gain='relu')))
+
     ############# First residual blocks #############
-    for _ in range(num_blocks[0]):
+    for _ in range(num_blocks[0] - 1):
         l = residual_block3(l, base_dim=64)
 
     ############# Second residual blocks ############
@@ -122,7 +131,7 @@ def build_model(input_var):
     # Increment Dimension
     l = residual_block3(l, base_dim=256, increase_dim=True, projection=True)
     for _ in range(num_blocks[2] - 1):
-        l = residual_block3(l, base_dim=128)
+        l = residual_block3(l, base_dim=256)
 
     ############# Fourth residual blocks #############
     # Increment Dimension
@@ -134,11 +143,11 @@ def build_model(input_var):
     l = GlobalPoolLayer(l)
 
     # Softmax Layer
-    softmax = DenseLayer(l, num_units=output_dim,
+    softmax_layer = DenseLayer(l, num_units=output_dim,
                          W=nn.init.HeNormal(),
                          nonlinearity=softmax)
 
-    return softmax
+    return softmax_layer
 
 
 

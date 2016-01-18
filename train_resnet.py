@@ -32,27 +32,27 @@ def load_model(mod):
 np.set_printoptions(precision=3)
 
 # configs
-input_size = 512
+input_size = 256
 input_height, input_width = (input_size, input_size)
 num_class = 5
 num_channels = 3
 
 # loss function config
-l2_reg = 0.0001
+l2_reg = 0.00001
 
 # training configs
-batch_size = 32
-lr = theano.shared(np.array(0.01, dtype=theano.config.floatX))
-lr_schedule = {3 : 0.1, 10 : 0.01, 15 : 0.001, 20 : 0.0001, 25: 0.00001 }
+batch_size = 16
+lr =  0.0001
+lr = theano.shared(nn.utils.floatX(lr))
+lr_schedule = {1 : 0.001, 10 : 0.0001, 15 : 0.00001, 20 : 0.000001, 25: 0.0000001 }
 n_epochs = 30
 momentum = 0.9
 validate_every = 1000 # iterations
 save_every = 10 # epochs
 
 # paths
-data_dir = "/nikel/dhpark/fundus/kaggle/original/training/train_medium"
+data_dir = "/nikel/dhpark/fundus/kaggle/original/training/train_small"
 label_file = "/nikel/dhpark/fundus/kaggle/original/training/trainLabels.csv"
-#mean_file = ""
 model = "models/resnet"
 dst_path = "/nikel/dhpark/fundus_saved_weights/resnet"
 
@@ -86,12 +86,12 @@ print('Oversampled set size: {}'.format(len(train_files)))
 
 #print('Computing mean...')
 #mean = data_util.compute_mean_across_channels(train_files)
-#mean.dump('mean.pkl')
+#mean.dump('mean_256.pkl')
 #print('Computing std...')
 #std = data_util.compute_std_across_channels(train_files)
-#std.dump('std.pkl')
-mean = np.load('mean.pkl')
-std = np.load('std.pkl')
+#std.dump('std_256.pkl')
+mean = np.load('mean_256.pkl')
+std = np.load('std_256.pkl')
 
 valid_files = np.array(files)[valid_idx].tolist()
 valid_labels = labels[valid_idx]
@@ -116,17 +116,18 @@ valid_iter = threaded_iterator(valid_iter)
 
 
 # Construct loss function & accuracy
-predictions = nn.layers.get_output(output_layer, deterministic=True)
+predictions = nn.layers.get_output(output_layer)
 train_loss = categorical_crossentropy(predictions, y)
 train_loss = train_loss.mean()
+#params = nn.layers.get_all_params(output_layer, regularizable=True)
+#regularization = sum(T.sum(p ** 2) for p in params)
+#l2_penalty = regularization * l2_reg
 all_layers = nn.layers.get_all_layers(output_layer)
 l2_penalty = nn.regularization.regularize_layer_params(all_layers, nn.regularization.l2) * l2_reg
 train_loss = train_loss + l2_penalty
 train_accuracy = accuracy(predictions, y)
 train_kappa = quad_kappa(predictions, y)
 
-#params = nn.layers.get_all_params(output_layer, regularizable=True)
-#regularization = sum(T.sum(p ** 2) for p in params)
 
 valid_predictions = nn.layers.get_output(output_layer, deterministic=True)
 valid_loss = categorical_crossentropy(valid_predictions, y)
@@ -225,11 +226,6 @@ while epoch < n_epochs:
         lr.set_value(lr_schedule[epoch])
 
 print('>> Training Complete')
-
-
-
-
-
 
 
 
