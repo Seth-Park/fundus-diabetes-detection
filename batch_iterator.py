@@ -66,7 +66,7 @@ class PairedBatchIterator(BatchIterator):
         self.files = np.array(files)
         self.labels = np.array(labels).astype(np.int32)
         self.n = len(files)
-        self.batch_size = batch_size // 2
+        self.batch_size = batch_size // 2 # divide the batch_size by 2 to count how many pairs there are
         self.testing = testing
 
         if normalize is not None:
@@ -101,6 +101,12 @@ class PairedBatchIterator(BatchIterator):
         return (batch_X, batch_y)
 
 def unpack(files, labels):
+    """
+    This function exploits the fact that the loaded files and labels are paired.
+    To create a batch with these paired data, we take the left filess and labels to form the
+    first half of the batch and take the right files and labels to form the latter half.
+    """
+
     left = []
     right = []
     left_labels = []
